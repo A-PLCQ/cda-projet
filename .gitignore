@@ -1,5 +1,6 @@
 # Node / JS
 node_modules/
+node_modules
 .npm/
 dist/
 build/
@@ -8,6 +9,7 @@ build/
 .env.*
 # OS/macOS
 .DS_Store
+__MACOSX
 # Logs
 npm-debug.log*
 yarn-debug.log*
