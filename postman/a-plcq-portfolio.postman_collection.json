@@ -1,0 +1,308 @@
+{
+  "info": {
+    "name": "a-plcq Portfolio API (fixed)",
+    "_postman_id": "f95222b7-e9b7-4b8c-8f9b-0175f0e6e5fa",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Collection alignée sur l'API déployée (auth flow + CRUD + media/links)."
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Injecte automatiquement l'Authorization si access_token est présent",
+          "const tok = pm.environment.get('access_token');",
+          "if (tok) {",
+          "  pm.request.headers.upsert({ key: 'Authorization', value: `Bearer ${tok}` });",
+          "} else {",
+          "  pm.request.headers.remove('Authorization');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Healthcheck",
+      "request": { "method": "GET", "url": "{{api_url}}/api/health" },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', ()=> pm.response.code===200);",
+              "pm.test('ok:true', ()=> pm.response.json().ok===true);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{api_url}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@a-plcq.com\",\n  \"password\": \"Passw0rd!123\",\n  \"nom_affiche\": \"Admin\",\n  \"role\": \"admin\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201', ()=> pm.response.code===201);",
+                  "const d = pm.response.json().data;",
+                  "pm.environment.set('access_token', d.access_token);",
+                  "pm.environment.set('refresh_token', d.refresh_token);",
+                  "pm.environment.set('jti', d.jti);",
+                  "pm.environment.set('user_id', d.user.id_utilisateur);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{api_url}}/api/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"email\":\"admin@a-plcq.com\",\n  \"password\":\"Passw0rd!123\"\n}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', ()=> pm.response.code===200);",
+                  "const d = pm.response.json().data;",
+                  "pm.environment.set('access_token', d.access_token);",
+                  "pm.environment.set('refresh_token', d.refresh_token);",
+                  "pm.environment.set('jti', d.jti);",
+                  "pm.environment.set('user_id', d.user.id_utilisateur);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh (id_utilisateur + refresh_token)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{api_url}}/api/auth/refresh",
+            "body": { "mode": "raw", "raw": "{\n  \"id_utilisateur\": \"{{user_id}}\",\n  \"refresh_token\": \"{{refresh_token}}\"\n}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', ()=> pm.response.code===200);",
+                  "pm.environment.set('access_token', pm.response.json().data.access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout (révoque jti)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{api_url}}/api/auth/logout",
+            "body": { "mode": "raw", "raw": "{\n  \"jti\": \"{{jti}}\"\n}" }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('204', ()=> pm.response.code===204);" ] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Me",
+          "request": { "method": "GET", "url": "{{api_url}}/api/users/me" },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200', ()=> pm.response.code===200);" ] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "List (public)",
+          "request": { "method": "GET", "url": "{{api_url}}/api/projets?limit=10&page=1" },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200', ()=> pm.response.code===200);" ] } }
+          ]
+        },
+        {
+          "name": "Create (admin|editor)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{api_url}}/api/projets",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titre\": \"Refonte site vitrine\",\n  \"extrait\": \"Stack React + Node\",\n  \"description\": \"Projet CDA – portfolio\",\n  \"client\": \"A-PLCQ\",\n  \"statut\": \"publie\",\n  \"est_mis_en_avant\": true,\n  \"categories\": []\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [ "pm.test('201', ()=> pm.response.code===201);" ] }
+            }
+          ]
+        },
+        {
+          "name": "Get by id_or_slug",
+          "request": { "method": "GET", "url": "{{api_url}}/api/projets/:id_or_slug" },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200', ()=> pm.response.code===200);" ] } }
+          ]
+        },
+        {
+          "name": "Update (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{api_url}}/api/projets/:id",
+            "body": { "mode": "raw", "raw": "{\n  \"extrait\": \"Stack React + Node + MySQL\",\n  \"est_mis_en_avant\": false\n}" }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200', ()=> pm.response.code===200);" ] } }
+          ]
+        },
+        {
+          "name": "Delete (admin)",
+          "request": { "method": "DELETE", "url": "{{api_url}}/api/projets/:id" },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('204', ()=> pm.response.code===204);" ] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Project ↔ Categories",
+      "item": [
+        {
+          "name": "Set categories",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{api_url}}/api/projets/:id/categories",
+            "body": { "mode": "raw", "raw": "{\n  \"categories\": [\"{{id_cat_1}}\", \"{{id_cat_2}}\"]\n}" }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200', ()=> pm.response.code===200);" ] } }
+          ]
+        },
+        {
+          "name": "Get categories of project",
+          "request": { "method": "GET", "url": "{{api_url}}/api/projets/:id/categories" },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200', ()=> pm.response.code===200);" ] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        { "name": "List (public)", "request": { "method": "GET", "url": "{{api_url}}/api/categories" } },
+        {
+          "name": "Create (admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{api_url}}/api/categories",
+            "body": { "mode": "raw", "raw": "{\n  \"nom\": \"Frontend\",\n  \"description\": \"UI/UX, React\"\n}" }
+          }
+        },
+        {
+          "name": "Update (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{api_url}}/api/categories/:id",
+            "body": { "mode": "raw", "raw": "{ \"description\": \"Mise à jour\" }" }
+          }
+        },
+        { "name": "Delete (admin)", "request": { "method": "DELETE", "url": "{{api_url}}/api/categories/:id" } }
+      ]
+    },
+    {
+      "name": "Media",
+      "item": [
+        {
+          "name": "Upload media to project",
+          "request": {
+            "method": "POST",
+            "url": "{{api_url}}/api/media/projets/:id_projet",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": [ "/path/to/image.jpg" ] },
+                { "key": "legende", "type": "text", "value": "Homepage screenshot" },
+                { "key": "type", "type": "text", "value": "image" },
+                { "key": "position_", "type": "text", "value": "1" }
+              ]
+            }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('201', ()=> pm.response.code===201);" ] } }
+          ]
+        },
+        {
+          "name": "List media of a project",
+          "request": { "method": "GET", "url": "{{api_url}}/api/media/projets/:id_projet" },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200', ()=> pm.response.code===200);" ] } }
+          ]
+        },
+        { "name": "Delete media", "request": { "method": "DELETE", "url": "{{api_url}}/api/media/:id_media" } }
+      ]
+    },
+    {
+      "name": "Links",
+      "item": [
+        {
+          "name": "Add link to project",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{api_url}}/api/liens/projets/:id_projet",
+            "body": { "mode": "raw", "raw": "{\n  \"libelle\": \"GitHub\",\n  \"url\": \"https://github.com/yourrepo\",\n  \"type\": \"github\"\n}" }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('201', ()=> pm.response.code===201);" ] } }
+          ]
+        },
+        {
+          "name": "List links of a project",
+          "request": { "method": "GET", "url": "{{api_url}}/api/liens/projets/:id_projet" },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200', ()=> pm.response.code===200);" ] } }
+          ]
+        },
+        { "name": "Delete link", "request": { "method": "DELETE", "url": "{{api_url}}/api/liens/:id_lien" } }
+      ]
+    }
+  ]
+}

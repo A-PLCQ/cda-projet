@@ -1,9 +1,11 @@
-import { Router } from 'express';
-import validate from '../middlewares/validate.js';
-import { registerSchema, loginSchema } from '../validators/auth.schema.js';
-import { register, login } from '../controllers/auth.controller.js';
+const { Router } = require('express');
+const ctrl = require('../controllers/auth.controller');
 
-const r = Router();
-r.post('/register', validate(registerSchema), register);
-r.post('/login', validate(loginSchema), login);
-export default r;
+const router = Router();
+
+router.post('/register', ctrl.register);
+router.post('/login', ctrl.login);
+router.post('/refresh', ctrl.refresh);
+router.post('/logout', ctrl.logout);
+
+module.exports = router;

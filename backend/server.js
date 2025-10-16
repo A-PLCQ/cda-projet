@@ -1,87 +1,118 @@
-// Boot robuste pour diagnostiquer facilement en prod (cPanel/Passenger)
-import fs from 'node:fs';
-import express from 'express';
-import cors from 'cors';
-import mysql from 'mysql2/promise';
+// server.js
+const fs = require('node:fs');
+const path = require('node:path');
+const express = require('express');
+const cors = require('cors');
 
-// ---- Chargement .env (supporte DOTENV_CONFIG_PATH) ----
-import dotenv from 'dotenv';
-if (process.env.DOTENV_CONFIG_PATH && fs.existsSync(process.env.DOTENV_CONFIG_PATH)) {
-  dotenv.config({ path: process.env.DOTENV_CONFIG_PATH });
-} else {
-  dotenv.config(); // tente .env local si pr茅sent
-}
+// ---- Charge env et pool ----
+const { env } = require('./app/config/env');
+const { pool } = require('./app/config/db');
 
-// ---- App & CORS (autorise localhost + domaine) ----
+// ---- Routes globales ----
+const routes = require('./app/routes');
+
 const app = express();
-const allowed = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'https://a-plcq.com',
-  'https://www.a-plcq.com'
-];
-app.use(cors({
-  origin(origin, cb) {
-    if (!origin || allowed.includes(origin)) return cb(null, true);
-    cb(new Error('Not allowed by CORS'));
-  }
-}));
-app.use(express.json());
 
-// ---- MySQL pool ----
-let pool;
-function getPool() {
-  if (!pool) {
-    pool = mysql.createPool({
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT || 3306),
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      namedPlaceholders: true,
-      connectionLimit: 10
-    });
-  }
-  return pool;
-}
+// --- Trust proxy (Apache/Passenger) ---
+if (env.TRUST_PROXY) app.set('trust proxy', Number(env.TRUST_PROXY) || 1);
 
-// ---- Routes de test / health ----
-app.get('/api/health', async (req, res) => {
-  try {
-    const [rows] = await getPool().query('SELECT 1 AS ok');
-    res.json({
-      ok: true,
-      env: {
-        node: process.version,
-        db: process.env.DB_NAME
-      },
-      db_ok: rows?.[0]?.ok === 1
-    });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e.message });
-  }
+// --- CORS multi-origines ---
+const allowList = env.CORS_ORIGINS;
+app.use(
+  cors({
+    origin(origin, cb) {
+      if (!origin) return cb(null, true); // autorise curl / serveur interne
+      if (allowList.includes(origin)) return cb(null, true);
+      return cb(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+  })
+);
+
+// -- anti-crash global (log + réponse 500 sans tuer le process) --
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason);
 });
 
-// ---- Route projets minimale (pour v茅rifier la BDD) ----
-app.get('/api/projects', async (req, res) => {
+// --- Body parsers ---
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// --- Static uploads ---
+if (!fs.existsSync(env.UPLOAD_DIR)) {
   try {
-    const [rows] = await getPool().query('SELECT * FROM projet ORDER BY date_creation DESC');
-    res.json({ ok: true, data: rows });
+    fs.mkdirSync(env.UPLOAD_DIR, { recursive: true });
   } catch (e) {
-    // Si la table n鈥檈xiste pas ou BDD KO, on renvoie l鈥檈rreur
-    res.status(500).json({ ok: false, error: e.message });
+    console.error('[UPLOAD] cannot create directory', e.message);
   }
+}
+app.use('/uploads', express.static(env.UPLOAD_DIR));
+
+// --- Servir /public (docs, assets) ---
+// permet de charger automatiquement docs.html sur /docs
+app.use(
+  express.static(path.join(process.cwd(), 'public'), {
+    extensions: ['html'],   // /docs -> docs.html
+    index: false            // évite de servir index.html par défaut
+  })
+);
+
+// --- Page d'accueil HTML ---
+app.get('/', (req, res) => {
+  const html = `
+  <!DOCTYPE html>
+  <html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Portfolio A-PLCQ</title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Roboto, sans-serif;
+        background:#0d1117; color:#e6edf3;
+        display:flex; flex-direction:column;
+        align-items:center; justify-content:center;
+        height:100vh; margin:0;
+      }
+      h1 { font-size:2rem; color:#58a6ff; margin-bottom:0.5rem; }
+      p { margin:0.25rem 0; font-size:1rem; }
+      a {
+        color:#58a6ff; text-decoration:none; border-bottom:1px solid #58a6ff;
+      }
+      a:hover { color:#79c0ff; border-color:#79c0ff; }
+      footer {
+        position:absolute; bottom:10px; font-size:0.85rem; color:#8b949e;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>API Portfolio A-PLCQ</h1>
+    <p>Statut : <strong style="color:#3fb950;">en ligne</strong></p>
+    <p>Base de données : <strong>${env.DB.database}</strong></p>
+    <p>Version Node.js : <strong>${process.version}</strong></p>
+    <p><a href="/api/health"> Voir /api/health</a></p>
+    <p><a href="/docs"> Consulter la doc</a></p>
+    <footer>© ${new Date().getFullYear()} a-plcq.com</footer>
+  </body>
+  </html>`;
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.status(200).send(html);
 });
 
-// ---- Static uploads (si besoin) ----
-const up = process.env.UPLOAD_DIR || 'uploads';
-if (!fs.existsSync(up)) {
-  try { fs.mkdirSync(up, { recursive: true }); } catch {}
-}
-app.use('/uploads', express.static(up));
+// --- Routes API principales ---
+app.use('/api', routes);
 
-// ---- Start ----
-const port = Number(process.env.PORT || 8888);
-app.listen(port, () => {
-  console.log(`API listening on :${port}`);
+// --- 404 & Erreur handler ---
+app.use((req, res) => res.status(404).json({ error: { message: 'Not Found' } }));
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(err.status || 500).json({ error: { message: err.message || 'Internal Server Error' } });
+});
+
+// --- Start ---
+app.listen(env.PORT, () => {
+  console.log(`[API] listening on :${env.PORT} (${env.NODE_ENV})`);
 });

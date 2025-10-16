@@ -1,17 +1,17 @@
-import mysql from 'mysql2/promise';
+// app/config/db.js
+const mysql = require('mysql2/promise');
+const { env } = require('./env');
 
-let pool;
-export function getPool() {
-  if (!pool) {
-    pool = mysql.createPool({
-      host: process.env.DB_HOST,
-      port: process.env.DB_PORT,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      namedPlaceholders: true,
-      connectionLimit: 10
-    });
+const pool = mysql.createPool(env.DB);
+
+(async () => {
+  try {
+    const [r] = await pool.query('SELECT 1');
+    if (!r) console.warn('[DB] ping returned empty result');
+    else console.log('[DB] connected');
+  } catch (e) {
+    console.error('[DB] connection error:', e.code || e.message);
   }
-  return pool;
-}
+})();
+
+module.exports = { pool };
