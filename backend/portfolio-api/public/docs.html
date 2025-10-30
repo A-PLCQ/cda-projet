@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Documentation API – A-PLCQ</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;
+         background:#0d1117;color:#e6edf3;line-height:1.55;margin:0;padding:32px}
+    a{color:#58a6ff;text-decoration:none;border-bottom:1px solid #58a6ff}
+    a:hover{color:#79c0ff;border-color:#79c0ff}
+    h1{color:#58a6ff;margin:.2rem 0 1rem;font-size:1.8rem}
+    h2{margin-top:2rem;color:#c9d1d9}
+    code,kbd{background:#161b22;border:1px solid #30363d;padding:.2rem .35rem;border-radius:6px}
+    pre{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px;overflow:auto}
+    .tag{display:inline-block;background:#161b22;border:1px solid #30363d;color:#c9d1d9;
+         padding:.12rem .5rem;border-radius:999px;font-size:.85rem;margin-right:.4rem}
+    .get{border-color:#238636;color:#79c0ff}
+    .post{border-color:#1f6feb}
+    .patch{border-color:#a371f7}
+    .del{border-color:#f85149}
+    .muted{color:#8b949e}
+    .card{border:1px solid #30363d;border-radius:12px;padding:16px;margin:12px 0;background:#0f141b}
+  </style>
+</head>
+<body>
+  <h1>Documentation API – A-PLCQ</h1>
+  <p class="muted">Base URL : <code>https://api.a-plcq.com/api</code> • <a href="/api/health">/api/health</a></p>
+
+  <div class="card">
+    <strong>Auth</strong><br/>
+    <span class="tag post">POST</span> <code>/api/auth/register</code><br/>
+    <span class="tag post">POST</span> <code>/api/auth/login</code><br/>
+    <span class="tag get">GET</span> <code>/api/users/me</code><br/>
+    <span class="tag post">POST</span> <code>/api/auth/refresh</code><br/>
+    <span class="tag post">POST</span> <code>/api/auth/logout</code>
+  </div>
+
+  <div class="card">
+    <strong>Projects</strong><br/>
+    <span class="tag get">GET</span> <code>/api/projets?limit=&amp;page=</code><br/>
+    <span class="tag get">GET</span> <code>/api/projets/:id_or_slug</code><br/>
+    <span class="tag post">POST</span> <code>/api/projets</code> <span class="muted">(admin|editor)</span><br/>
+    <span class="tag patch">PATCH</span> <code>/api/projets/:id</code> <span class="muted">(admin|editor)</span><br/>
+    <span class="tag del">DELETE</span> <code>/api/projets/:id</code> <span class="muted">(admin)</span><br/>
+    <span class="tag get">GET</span> <code>/api/projets/:id/categories</code><br/>
+    <span class="tag post">PUT</span> <code>/api/projets/:id/categories</code> <span class="muted">(admin|editor)</span>
+  </div>
+
+  <div class="card">
+    <strong>Categories</strong><br/>
+    <span class="tag get">GET</span> <code>/api/categories</code><br/>
+    <span class="tag get">GET</span> <code>/api/categories/:id_or_slug</code><br/>
+    <span class="tag post">POST</span> <code>/api/categories</code> <span class="muted">(admin)</span><br/>
+    <span class="tag patch">PATCH</span> <code>/api/categories/:id</code> <span class="muted">(admin)</span><br/>
+    <span class="tag del">DELETE</span> <code>/api/categories/:id</code> <span class="muted">(admin)</span>
+  </div>
+
+  <div class="card">
+    <strong>Media</strong><br/>
+    <span class="tag get">GET</span> <code>/api/media/projets/:id_projet</code><br/>
+    <span class="tag post">POST</span> <code>/api/media/projets/:id_projet</code> <span class="muted">(admin|editor, form-data : file, legende, type, position_)</span><br/>
+    <span class="tag patch">PATCH</span> <code>/api/media/:id_media</code> <span class="muted">(admin|editor)</span><br/>
+    <span class="tag del">DELETE</span> <code>/api/media/:id_media</code> <span class="muted">(admin)</span>
+  </div>
+
+  <div class="card">
+    <strong>Links</strong><br/>
+    <span class="tag get">GET</span> <code>/api/liens/projets/:id_projet</code><br/>
+    <span class="tag post">POST</span> <code>/api/liens/projets/:id_projet</code> <span class="muted">(admin|editor)</span><br/>
+    <span class="tag del">DELETE</span> <code>/api/liens/:id_lien</code> <span class="muted">(admin|editor)</span>
+  </div>
+
+  <p class="muted">JWT roles : <code>admin</code>, <code>editor</code>, <code>user</code>.  
+  CORS : configurez <code>CORS_ORIGINS</code> dans l’environnement.</p>
+</body>
+</html>

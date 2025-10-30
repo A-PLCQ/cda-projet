@@ -1,0 +1,82 @@
+frontend/
+├─ public/                       # favicons, manifest, images publiques
+├─ src/
+│  ├─ app/                       # initialisation & composition globale
+│  │  ├─ router/                 # routes publiques & admin (React Router)
+│  │  │  ├─ PublicRoutes.tsx
+│  │  │  ├─ AdminRoutes.tsx
+│  │  │  └─ guards/             # protections de routes
+│  │  │     ├─ AuthGuard.tsx
+│  │  │     └─ RoleGuard.tsx
+│  │  ├─ providers/             # context/global (Query, Store, Theme, i18n)
+│  │  │  ├─ QueryProvider.tsx
+│  │  │  ├─ StoreProvider.tsx
+│  │  │  └─ ThemeProvider.tsx
+│  │  └─ App.tsx
+│  │
+│  ├─ pages/                     # pages routées (segmentées)
+│  │  ├─ public/
+│  │  │  ├─ Home.tsx
+│  │  │  ├─ Projects.tsx         # liste projets
+│  │  │  ├─ ProjectDetail.tsx    # /projets/:slug
+│  │  │  └─ NotFound.tsx
+│  │  └─ admin/                  # backoffice
+│  │     ├─ Dashboard.tsx
+│  │     ├─ Auth/
+│  │     │  ├─ Login.tsx
+│  │     │  └─ Logout.tsx
+│  │     ├─ Projects/
+│  │     │  ├─ ProjectsList.tsx
+│  │     │  ├─ ProjectForm.tsx
+│  │     │  └─ ProjectMedia.tsx
+│  │     ├─ Categories/
+│  │     │  ├─ CategoriesList.tsx
+│  │     │  └─ CategoryForm.tsx
+│  │     ├─ Users/
+│  │     │  ├─ UsersList.tsx
+│  │     │  └─ UserForm.tsx
+│  │     └─ Settings/
+│  │        └─ AdminSlug.tsx     # réglage du slug d’accès admin
+│  │
+│  ├─ layouts/                   # squelettes visuels
+│  │  ├─ PublicLayout.tsx
+│  │  └─ AdminLayout.tsx
+│  │
+│  ├─ features/                  # “tranches métier” réutilisables
+│  │  ├─ auth/                   # login, refresh, rôle, hooks
+│  │  │  ├─ api.ts
+│  │  │  ├─ hooks.ts
+│  │  │  └─ types.ts
+│  │  ├─ projects/
+│  │  │  ├─ api.ts
+│  │  │  ├─ hooks.ts
+│  │  │  └─ types.ts
+│  │  ├─ categories/
+│  │  └─ media/
+│  │
+│  ├─ components/                # UI réutilisable (atoms/molecules)
+│  │  ├─ forms/
+│  │  ├─ table/
+│  │  ├─ inputs/
+│  │  └─ feedback/               # Toaster, Modal, Spinner
+│  │
+│  ├─ services/                  # couche d’accès HTTP
+│  │  ├─ http.ts                 # axios instance (baseURL, interceptors)
+│  │  └─ storage.ts              # localStorage/session, tokens
+│  │
+│  ├─ store/                     # état global léger (Zustand ou Redux)
+│  │  └─ auth.store.ts
+│  ├─ hooks/                     # hooks génériques (useDebounce, useSlug, etc.)
+│  ├─ utils/                     # helpers (slugify, formatDate, clsx)
+│  ├─ styles/                    # Tailwind config, variables CSS
+│  ├─ assets/                    # images, logos non publics
+│  ├─ config/                    # constantes & env mappers
+│  │  └─ env.ts                  # lit VITE_* et fournit config typée
+│  └─ index.tsx
+│
+│
+├─ .env.development              # VITE_API_BASE_URL=...
+├─ .env.production
+├─ vite.config.ts
+├─ .env.development                 # -> recommande TypeScript
+└─ package.json
