@@ -106,100 +106,99 @@ export default function CategoriesList() {
   }
 
   return (
-    <section className="section">
+    <section className="section s-admin-cats">
+      <style>{`
+        /* Header */
+        .head{display:flex; flex-direction:column; gap:.5rem; margin-bottom:var(--space-6)}
+
+        /* Flash messages */
+        .flashes{display:flex; flex-direction:column; gap:var(--space-3); margin-top:var(--space-4)}
+        .flash{border:1px solid var(--color-border); border-left-width:3px; border-radius:var(--radius); padding:var(--space-4); background:var(--color-surface)}
+        .flash.ok{border-left-color:#22c55e}
+        .flash.err{border-left-color:#ef4444; color:#ef4444}
+
+        /* 2 colonnes responsive */
+        .two-cols{display:flex; gap:var(--space-6); flex-wrap:wrap; margin-top:var(--space-6)}
+        .col-list{flex:1 1 480px; min-width:320px}
+        .col-form{flex:1 1 420px; min-width:320px}
+
+        /* Liste des catégories */
+        .list{display:flex; flex-direction:column; gap:var(--space-3); margin-top:var(--space-3)}
+        .item{
+          border:1px solid var(--color-border); background:var(--color-surface);
+          border-radius:var(--radius-lg); padding:var(--space-4);
+          display:flex; align-items:flex-start; justify-content:space-between; gap:var(--space-4);
+          transition:transform 200ms var(--ease), border-color 200ms var(--ease), box-shadow 200ms var(--ease);
+        }
+        .item:hover{ transform:translateY(-4px); border-color:var(--color-primary); box-shadow:0 6px 18px rgba(152,109,255,.18) }
+        .item .meta{font-size:var(--step--1); color:var(--color-muted)}
+        .item-actions{display:flex; gap:var(--space-3); flex-wrap:wrap}
+
+        /* Carte/Formulaire */
+        .panel{
+          border:1px solid var(--color-border); background:var(--color-surface);
+          border-radius:var(--radius-lg); padding:var(--space-6)
+        }
+        .form{display:flex; flex-direction:column; gap:var(--space-4)}
+        .field{display:flex; flex-direction:column; gap:.35rem}
+      `}</style>
+
       <div className="container">
-        <header className="grid" style={{ gap: "var(--space-2)" }}>
-          <h1>
-            Catégories <span className="primary">.</span>
-          </h1>
+        {/* Header */}
+        <header className="head">
+          <h1>Catégories <span className="primary">.</span></h1>
           <p className="muted">
-            Gérez les catégories associées à vos projets (création, édition,
-            suppression).
+            Gérez les catégories associées à vos projets (création, édition, suppression).
           </p>
         </header>
 
+        {/* Flash */}
         {(flashOk || flashErr || error) && (
-          <div className="grid" style={{ gap: "var(--space-3)", marginTop: "var(--space-4)" }}>
-            {flashOk && (
-              <div
-                className="card surface card-padding"
-                style={{ borderLeft: "3px solid #22c55e" }}
-              >
-                {flashOk}
-              </div>
-            )}
+          <div className="flashes">
+            {flashOk && <div className="flash ok">{flashOk}</div>}
             {(flashErr || error) && (
-              <div
-                className="card surface card-padding"
-                style={{ borderLeft: "3px solid #ef4444", color: "#ef4444" }}
-              >
-                {flashErr || "Erreur lors du chargement des catégories."}
-              </div>
+              <div className="flash err">{flashErr || "Erreur lors du chargement des catégories."}</div>
             )}
           </div>
         )}
 
-        <div className="grid grid-2" style={{ gap: "var(--space-6)", marginTop: "var(--space-6)" }}>
+        {/* 2 colonnes */}
+        <div className="two-cols">
           {/* === Liste === */}
-          <section className="card surface card-padding">
+          <section className="panel col-list">
             <div className="field-row" style={{ justifyContent: "space-between" }}>
               <h3>Catégories</h3>
               {isFetching && <span className="muted">Rafraîchissement…</span>}
             </div>
 
-            <div className="grid" style={{ gap: "var(--space-3)", marginTop: "var(--space-3)" }}>
+            <div className="list">
               {cats.map((c) => (
-                <article
-                  key={c.id_categorie}
-                  className="card surface card-hover"
-                  style={{
-                    padding: "var(--space-4)",
-                    display: "flex",
-                    alignItems: "flex-start",
-                    justifyContent: "space-between",
-                    gap: "var(--space-4)",
-                  }}
-                >
+                <article key={c.id_categorie} className="item">
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 600 }}>{c.nom}</div>
-                    <div className="muted" style={{ fontSize: "var(--step--1)" }}>
-                      {c.slug}
-                    </div>
-                    {c.description && (
-                      <p className="muted" style={{ marginTop: "4px" }}>
-                        {c.description}
-                      </p>
-                    )}
+                    <div className="meta">{c.slug}</div>
+                    {c.description && <p className="muted" style={{ marginTop: 4 }}>{c.description}</p>}
                   </div>
-                  <div className="field-row" style={{ flexWrap: "wrap" }}>
-                    <button
-                      className="btn btn-ghost"
-                      onClick={() => setEditing(c)}
-                    >
-                      Éditer
-                    </button>
-                    <button className="btn" onClick={() => onDelete(c)}>
-                      Supprimer
-                    </button>
+
+                  <div className="item-actions">
+                    <button className="btn btn-ghost" onClick={() => setEditing(c)}>Éditer</button>
+                    <button className="btn" onClick={() => onDelete(c)}>Supprimer</button>
                   </div>
                 </article>
               ))}
 
-              {cats.length === 0 && (
-                <p className="muted">Aucune catégorie pour le moment.</p>
-              )}
+              {cats.length === 0 && <p className="muted">Aucune catégorie pour le moment.</p>}
             </div>
           </section>
 
           {/* === Formulaire créer / éditer === */}
-          <section className="card surface card-padding">
+          <section className="panel col-form">
             <h3 style={{ marginBottom: "var(--space-3)" }}>{title}</h3>
 
             <form
               key={editing?.id_categorie || "new"}
               onSubmit={editing ? onUpdate : onCreate}
-              className="grid"
-              style={{ gap: "var(--space-4)" }}
+              className="form"
             >
               <div className="field">
                 <label htmlFor="nom">Nom *</label>
@@ -217,7 +216,7 @@ export default function CategoriesList() {
                 <textarea
                   id="description"
                   name="description"
-                  className="textarea"
+                  className="input"
                   rows={3}
                   placeholder="Description optionnelle"
                   defaultValue={editing?.description || ""}

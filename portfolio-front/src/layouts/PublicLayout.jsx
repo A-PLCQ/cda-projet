@@ -6,7 +6,7 @@ export default function PublicLayout() {
   return (
     <>
       <Header />
-      <main className="min-h-[70vh]">
+      <main>
         <Outlet />
       </main>
       <Footer />

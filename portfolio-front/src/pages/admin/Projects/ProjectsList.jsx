@@ -16,33 +16,14 @@ function Pager({ meta }) {
   };
 
   return (
-    <div
-      className="pager"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "var(--space-4)",
-        marginTop: "var(--space-8)",
-      }}
-    >
-      <button
-        className="btn btn-ghost"
-        disabled={!meta?.hasPrev}
-        onClick={() => go(page - 1)}
-        style={{ opacity: !meta?.hasPrev ? 0.5 : 1 }}
-      >
+    <div className="pager">
+      <button className="btn btn-ghost" disabled={!meta?.hasPrev} onClick={() => go(page - 1)}>
         ← Précédent
       </button>
-      <span className="muted" style={{ fontSize: "var(--step--1)" }}>
+      <span className="muted page-info">
         Page {page} / {meta?.totalPages || 1} — {meta?.total || 0} projets
       </span>
-      <button
-        className="btn btn-ghost"
-        disabled={!meta?.hasNext}
-        onClick={() => go(page + 1)}
-        style={{ opacity: !meta?.hasNext ? 0.5 : 1 }}
-      >
+      <button className="btn btn-ghost" disabled={!meta?.hasNext} onClick={() => go(page + 1)}>
         Suivant →
       </button>
     </div>
@@ -56,10 +37,7 @@ export default function ProjectsList() {
   const page = Number(params.get("page") || 1);
   const limit = Number(params.get("limit") || 20);
 
-  const { data, isLoading, error, refetch, isFetching } = useProjectsQuery({
-    page,
-    limit,
-  });
+  const { data, isLoading, error, refetch, isFetching } = useProjectsQuery({ page, limit });
   const del = useDeleteProject();
 
   const onDelete = async (id, titre) => {
@@ -76,16 +54,32 @@ export default function ProjectsList() {
   const meta = data?.meta;
 
   return (
-    <section className="section">
-      <div className="container" style={{ maxWidth: 1100 }}>
-        <div className="field-row" style={{ justifyContent: "space-between" }}>
-          <h1>
-            Projets <span className="primary">— Admin</span>
-          </h1>
-          <button
-            onClick={() => nav(`/${ENV.adminSlug}/projets/new`)}
-            className="btn btn-primary"
-          >
+    <section className="section s-admin-projects">
+      <style>{`
+        .head{display:flex; align-items:center; justify-content:space-between; gap:var(--space-4)}
+        .list{display:flex; flex-direction:column; gap:var(--space-4); margin-top:var(--space-6)}
+        .item{
+          display:flex; align-items:center; justify-content:space-between; gap:var(--space-4);
+          border:1px solid var(--color-border); background:var(--color-surface);
+          border-radius:var(--radius-lg); padding:var(--space-4);
+          transition:transform 200ms var(--ease), border-color 200ms var(--ease), box-shadow 200ms var(--ease);
+        }
+        .item:hover{ transform:translateY(-4px); border-color:var(--color-primary); box-shadow:0 6px 18px rgba(152,109,255,.18) }
+        .item .meta{ font-size:var(--step--1); color:var(--color-muted); margin-top:2px }
+        .actions{ display:flex; gap:var(--space-3); flex-wrap:wrap }
+        .badge.primary{ border:1px solid var(--color-primary); color:var(--color-primary); border-radius:999px; padding:.1rem .5rem; margin-left:var(--space-2) }
+
+        .pager{ display:flex; align-items:center; justify-content:center; gap:var(--space-4); margin-top:var(--space-8) }
+        .page-info{ font-size:var(--step--1) }
+
+        /* container width */
+        .narrow{ max-width:1100px }
+      `}</style>
+
+      <div className="container narrow">
+        <div className="head">
+          <h1>Projets <span className="primary">— Admin</span></h1>
+          <button onClick={() => nav(`/${ENV.adminSlug}/projets/new`)} className="btn btn-primary">
             + Nouveau projet
           </button>
         </div>
@@ -97,65 +91,34 @@ export default function ProjectsList() {
           </p>
         )}
 
-        {!isLoading && projets.length === 0 && (
-          <p className="muted mt-6">Aucun projet trouvé.</p>
-        )}
+        {!isLoading && projets.length === 0 && <p className="muted mt-6">Aucun projet trouvé.</p>}
 
-        <div className="grid mt-6" style={{ gap: "var(--space-4)" }}>
+        <div className="list">
           {projets.map((p) => (
-            <article
-              key={p.id_projet}
-              className="card surface card-hover"
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "var(--space-4)",
-              }}
-            >
+            <article key={p.id_projet} className="item">
               {/* Informations projet */}
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600 }}>{p.titre}</div>
-                <div className="muted" style={{ fontSize: "var(--step--1)", marginTop: 2 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {p.titre}
+                </div>
+                <div className="meta">
                   {p.slug} • {p.statut}
-                  {p.est_mis_en_avant && (
-                    <span
-                      className="badge primary"
-                      style={{ marginLeft: "var(--space-2)" }}
-                    >
-                      En avant
-                    </span>
-                  )}
+                  {p.est_mis_en_avant && <span className="badge primary">En avant</span>}
                 </div>
               </div>
 
               {/* Boutons actions */}
-              <div className="field-row" style={{ flexWrap: "wrap", gap: "var(--space-3)" }}>
-                <Link
-                  className="btn btn-ghost"
-                  to={`/${ENV.adminSlug}/projets/${p.id_projet}/edit`}
-                >
+              <div className="actions">
+                <Link className="btn btn-ghost" to={`/${ENV.adminSlug}/projets/${p.id_projet}/edit`}>
                   Éditer
                 </Link>
-
-                <Link
-                  className="btn btn-ghost"
-                  to={`/${ENV.adminSlug}/projets/${p.id_projet}/media`}
-                >
+                <Link className="btn btn-ghost" to={`/${ENV.adminSlug}/projets/${p.id_projet}/media`}>
                   Médias
                 </Link>
-
-                <Link
-                  className="btn btn-ghost"
-                  to={`/${ENV.adminSlug}/projets/${p.id_projet}/liens`}
-                >
+                <Link className="btn btn-ghost" to={`/${ENV.adminSlug}/projets/${p.id_projet}/links`}>
                   Liens
                 </Link>
-
-                <button
-                  className="btn"
-                  onClick={() => onDelete(p.id_projet, p.titre)}
-                >
+                <button className="btn" onClick={() => onDelete(p.id_projet, p.titre)}>
                   Supprimer
                 </button>
               </div>

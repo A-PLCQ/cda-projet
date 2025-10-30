@@ -26,7 +26,7 @@ import RoleGuard from "../router/guards/RoleGuard";
 
 const base = `/${ENV.adminSlug}`;
 
-/* ⚠️ On exporte un FRAGMENT, pas un composant */
+
 export const AdminRoutes = (
   <>
     {/* Login public */}

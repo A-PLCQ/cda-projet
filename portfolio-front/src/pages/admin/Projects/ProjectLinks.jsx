@@ -61,47 +61,79 @@ export default function ProjectLinks() {
   };
 
   return (
-    <section className="section">
-      <div className="container" style={{ maxWidth: 920 }}>
-        <header className="grid" style={{ gap: "var(--space-2)" }}>
-          <h1>
-            Liens du projet <span className="primary">.</span>
-          </h1>
-          <p className="muted">
-            {project?.titre ? project.titre : "— Chargement du projet —"}
-          </p>
+    <section className="section s-admin-links">
+      <style>{`
+        /* Header */
+        .head{display:flex; flex-direction:column; gap:.5rem}
+
+        /* Card générique */
+        .card-elev{
+          border:1px solid var(--color-border);
+          background:var(--color-surface);
+          border-radius:var(--radius-lg);
+          box-shadow:var(--shadow-1);
+        }
+
+        /* Formulaire d'ajout */
+        .form-card{ margin-top:var(--space-6); padding:var(--space-6) }
+        .form{display:flex; flex-direction:column; gap:var(--space-4)}
+        .row{display:flex; gap:var(--space-4); align-items:flex-start; flex-wrap:wrap}
+        .field{display:flex; flex-direction:column; gap:.35rem}
+        .grow{flex:1 1 260px; min-width:240px}
+        .fixed{flex:0 0 220px}
+        .form-error{
+          color:#ef4444; background:rgba(239,68,68,.08);
+          border:1px solid rgba(239,68,68,.25);
+          border-radius:var(--radius); padding:var(--space-3);
+        }
+
+        /* Liste des liens */
+        .list-card{ margin-top:var(--space-6); padding:var(--space-6) }
+        .list-head{display:flex; align-items:center; justify-content:space-between}
+        .list{display:flex; flex-direction:column; gap:var(--space-3); margin-top:var(--space-3)}
+        .item{
+          display:flex; align-items:center; justify-content:space-between;
+          gap:var(--space-4);
+          border:1px solid var(--color-border);
+          background:var(--color-surface);
+          border-radius:var(--radius-lg);
+          padding:var(--space-4);
+          transition:transform 200ms var(--ease), border-color 200ms var(--ease), box-shadow 200ms var(--ease);
+        }
+        .item:hover{ transform:translateY(-4px); border-color:var(--color-primary); box-shadow:0 6px 18px rgba(152,109,255,.18) }
+        .item-meta{ color:var(--color-muted); margin-top:4px; font-size:var(--step--1) }
+        .actions{ display:flex; gap:var(--space-3); flex-wrap:wrap }
+
+        /* Badges type */
+        .badge{display:inline-flex; align-items:center; border:1px solid var(--color-border); border-radius:999px; padding:.25rem .6rem}
+        .badge.primary{ border-color:var(--color-primary); color:var(--color-primary) }
+
+        /* Container max */
+        .narrow{ max-width:920px }
+      `}</style>
+
+      <div className="container narrow">
+        <header className="head">
+          <h1>Liens du projet <span className="primary">.</span></h1>
+          <p className="muted">{project?.titre ? project.titre : "— Chargement du projet —"}</p>
         </header>
 
         {/* Formulaire ajout */}
-        <form
-          onSubmit={onAdd}
-          className="card surface card-padding mt-6"
-          style={{ display: "grid", gap: "var(--space-4)" }}
-        >
-          <div className="field-row">
-            <div className="field" style={{ flex: 1 }}>
+        <form onSubmit={onAdd} className="card-elev form-card form">
+          <div className="row">
+            <div className="field grow">
               <label htmlFor="libelle">Libellé</label>
-              <input
-                id="libelle"
-                name="libelle"
-                className="input"
-                placeholder="Ex : GitHub, Démo, Documentation…"
-              />
+              <input id="libelle" name="libelle" className="input" placeholder="Ex : GitHub, Démo, Documentation…" />
             </div>
 
-            <div className="field" style={{ flex: 1 }}>
+            <div className="field grow">
               <label htmlFor="url">URL</label>
-              <input
-                id="url"
-                name="url"
-                className="input"
-                placeholder="https://…"
-              />
+              <input id="url" name="url" className="input" placeholder="https://…" />
             </div>
 
-            <div className="field" style={{ width: 220 }}>
+            <div className="field fixed">
               <label htmlFor="type">Type</label>
-              <select id="type" name="type" className="select" defaultValue="github">
+              <select id="type" name="type" className="input" defaultValue="github">
                 <option value="github">GitHub</option>
                 <option value="demo">Démo</option>
                 <option value="doc">Doc</option>
@@ -110,21 +142,9 @@ export default function ProjectLinks() {
             </div>
           </div>
 
-          {formError && (
-            <div
-              style={{
-                color: "#ef4444",
-                background: "rgba(239,68,68,.08)",
-                border: "1px solid rgba(239,68,68,.25)",
-                borderRadius: "var(--radius)",
-                padding: "var(--space-3)",
-              }}
-            >
-              {formError}
-            </div>
-          )}
+          {formError && <div className="form-error">{formError}</div>}
 
-          <div className="field-row" style={{ justifyContent: "flex-end" }}>
+          <div className="row" style={{ justifyContent:"flex-end" }}>
             <button type="submit" className="btn btn-primary" disabled={submitting}>
               {submitting ? "Ajout…" : "Ajouter le lien"}
             </button>
@@ -132,8 +152,8 @@ export default function ProjectLinks() {
         </form>
 
         {/* Liste */}
-        <section className="card surface card-padding mt-6">
-          <div className="field-row" style={{ justifyContent: "space-between" }}>
+        <section className="card-elev list-card">
+          <div className="list-head">
             <h3>Liens existants</h3>
             {(isLoading || isFetching) && <span className="muted">Chargement…</span>}
           </div>
@@ -145,64 +165,45 @@ export default function ProjectLinks() {
           )}
 
           {!isLoading && links.length === 0 && (
-            <p className="muted mt-3">Aucun lien pour ce projet.</p>
+            <p className="muted" style={{ marginTop: "var(--space-3)" }}>Aucun lien pour ce projet.</p>
           )}
 
-          <div className="grid" style={{ gap: "var(--space-3)", marginTop: "var(--space-3)" }}>
-            {links.map((l) => (
-              <article
-                key={l.id_lien}
-                className="card surface card-padding card-hover"
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
-              >
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
-                    <strong>{l.libelle}</strong>
-                    <span
-                      className={`badge ${["github", "demo", "doc"].includes((l.type || "").toLowerCase()) ? "primary" : ""}`}
-                      title={`Type : ${l.type || "lien"}`}
-                    >
-                      {l.type || "lien"}
-                    </span>
+          <div className="list">
+            {links.map((l) => {
+              const type = (l.type || "").toLowerCase();
+              const typeIsPrimary = ["github", "demo", "doc"].includes(type);
+              return (
+                <article key={l.id_lien} className="item">
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:"var(--space-3)", flexWrap:"wrap" }}>
+                      <strong>{l.libelle}</strong>
+                      <span className={`badge ${typeIsPrimary ? "primary" : ""}`} title={`Type : ${l.type || "lien"}`}>
+                        {l.type || "lien"}
+                      </span>
+                    </div>
+                    <div className="item-meta">{l.url}</div>
                   </div>
-                  <div className="muted" style={{ marginTop: 4, fontSize: "var(--step--1)" }}>
-                    {l.url}
-                  </div>
-                </div>
 
-                <div className="field-row">
-                  <a
-                    href={l.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-ghost"
-                    title="Ouvrir"
-                  >
-                    Ouvrir
-                  </a>
-                  <button
-                    className="btn btn-ghost"
-                    title="Copier l’URL"
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(l.url);
-                      } catch {
-                        alert("Impossible de copier l’URL.");
-                      }
-                    }}
-                  >
-                    Copier
-                  </button>
-                  <button
-                    className="btn"
-                    onClick={() => onDelete(l.id_lien)}
-                    title="Supprimer"
-                  >
-                    Supprimer
-                  </button>
-                </div>
-              </article>
-            ))}
+                  <div className="actions">
+                    <a href={l.url} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" title="Ouvrir">
+                      Ouvrir
+                    </a>
+                    <button
+                      className="btn btn-ghost"
+                      title="Copier l’URL"
+                      onClick={async () => {
+                        try { await navigator.clipboard.writeText(l.url); } catch { alert("Impossible de copier l’URL."); }
+                      }}
+                    >
+                      Copier
+                    </button>
+                    <button className="btn" onClick={() => onDelete(l.id_lien)} title="Supprimer">
+                      Supprimer
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </section>
       </div>

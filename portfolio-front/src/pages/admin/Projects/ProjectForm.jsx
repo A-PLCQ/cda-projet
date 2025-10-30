@@ -21,18 +21,16 @@ const schema = z.object({
   client: z.string().optional(),
   statut: z.enum(["brouillon", "publie"]).default("publie"),
   est_mis_en_avant: z.boolean().default(false),
-  categories: z.array(z.string()).optional(), // tableau d'ids
+  categories: z.array(z.string()).optional(),
 });
 
 export default function ProjectForm() {
   const nav = useNavigate();
-  const { id } = useParams(); // si présent -> édition
+  const { id } = useParams();
   const isEdit = !!id;
 
   // Données du projet (édition)
-  const { data: project, isLoading: loadingProject } = useProjectQuery(
-    isEdit ? id : undefined
-  );
+  const { data: project, isLoading: loadingProject } = useProjectQuery(isEdit ? id : undefined);
 
   // Catégories disponibles
   const { data: cats = [], isLoading: loadingCats } = useQuery({
@@ -41,9 +39,7 @@ export default function ProjectForm() {
   });
 
   // Catégories déjà liées au projet (édition)
-  const { data: projectCats = [] } = useProjectCategoriesQuery(
-    isEdit ? id : undefined
-  );
+  const { data: projectCats = [] } = useProjectCategoriesQuery(isEdit ? id : undefined);
 
   // Mutations
   const createMut = useCreateProject();
@@ -71,7 +67,7 @@ export default function ProjectForm() {
     },
   });
 
-  // Quand le projet (édition) arrive -> reset du formulaire + précochage des catégories
+  // Pré-remplissage en édition
   useEffect(() => {
     if (isEdit && project) {
       reset({
@@ -117,19 +113,15 @@ export default function ProjectForm() {
         });
       }
 
-      // Applique/Met à jour les catégories si besoin
+      // Catégories
       const selectedCats = watch("categories") || [];
       const targetId = isEdit ? id : saved?.id_projet;
-      if (selectedCats.length && targetId) {
-        await setCatsMut.mutateAsync({
-          id: targetId,
-          categories: selectedCats,
-        });
+      if (targetId) {
+        await setCatsMut.mutateAsync({ id: targetId, categories: selectedCats });
       }
 
       nav(`/${ENV.adminSlug}/projets`);
-    } catch (e) {
-      // Erreur générique (tu peux remplacer par un toast)
+    } catch {
       alert("Erreur lors de l’enregistrement du projet.");
     }
   };
@@ -145,143 +137,161 @@ export default function ProjectForm() {
   }
 
   return (
-    <section className="section">
-      <div className="container" style={{ maxWidth: "920px" }}>
-        <header className="grid" style={{ gap: "var(--space-2)" }}>
+    <section className="section s-admin-project-form">
+      <style>{`
+        .head{display:flex; flex-direction:column; gap:.5rem}
+        .form-card{
+          border:1px solid var(--color-border);
+          background:var(--color-surface);
+          border-radius:var(--radius-lg);
+          padding:var(--space-6);
+          box-shadow:var(--shadow-1);
+          margin-top:var(--space-6);
+        }
+        form.form{display:flex; flex-direction:column; gap:var(--space-6)}
+        .field{display:flex; flex-direction:column; gap:.35rem}
+        .row{display:flex; gap:var(--space-4); align-items:flex-start; flex-wrap:wrap}
+        .grow{flex:1 1 320px; min-width:260px}
+        .fixed{flex:0 0 260px}
+        .checkbox-row{display:flex; align-items:center; gap:var(--space-3)}
+        .cats{display:flex; gap:var(--space-4); flex-wrap:wrap}
+        .badge{border:1px solid var(--color-border); border-radius:999px; padding:.4rem .7rem; background:var(--color-surface)}
+        .err{color:#ef4444; font-size:var(--step--1)}
+      `}</style>
+
+      <div className="container" style={{ maxWidth: 920 }}>
+        <header className="head">
           <h1>
-            {isEdit ? "Éditer le projet" : "Nouveau projet"}{" "}
-            <span className="primary">.</span>
+            {isEdit ? "Éditer le projet" : "Nouveau projet"} <span className="primary">.</span>
           </h1>
           <p className="muted">
-            Renseignez les informations principales de votre projet. Les champs
-            marqués d’un * sont obligatoires.
+            Renseignez les informations principales de votre projet. Les champs marqués d’un * sont
+            obligatoires.
           </p>
         </header>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="card surface card-padding mt-6"
-          style={{ display: "grid", gap: "var(--space-6)" }}
-        >
-          {/* Ligne 1 : Titre */}
-          <div className="field">
-            <label htmlFor="titre">
-              Titre <span className="primary">*</span>
-            </label>
-            <input
-              id="titre"
-              className="input"
-              placeholder="Ex: Refonte site vitrine"
-              {...register("titre")}
-            />
-            {errors.titre && (
-              <p className="muted" style={{ color: "#ef4444" }}>
-                {errors.titre.message}
-              </p>
-            )}
-          </div>
-
-          {/* Ligne 2 : Extrait */}
-          <div className="field">
-            <label htmlFor="extrait">Extrait</label>
-            <input
-              id="extrait"
-              className="input"
-              placeholder="Résumé court du projet"
-              {...register("extrait")}
-            />
-          </div>
-
-          {/* Ligne 3 : Description */}
-          <div className="field">
-            <label htmlFor="description">Description</label>
-            <textarea
-              id="description"
-              rows={6}
-              className="textarea"
-              placeholder="Description détaillée, objectifs, contexte, stack, résultats…"
-              {...register("description")}
-              style={{ resize: "vertical" }}
-            />
-          </div>
-
-          {/* Ligne 4 : Client / Statut */}
-          <div className="field-row">
-            <div className="field" style={{ flex: 1 }}>
-              <label htmlFor="client">Client</label>
+        <div className="form-card">
+          <form className="form" onSubmit={handleSubmit(onSubmit)}>
+            {/* Titre */}
+            <div className="field">
+              <label htmlFor="titre">
+                Titre <span className="primary">*</span>
+              </label>
               <input
-                id="client"
+                id="titre"
                 className="input"
-                placeholder="Nom du client (optionnel)"
-                {...register("client")}
+                placeholder="Ex: Refonte site vitrine"
+                {...register("titre")}
+              />
+              {errors.titre && <p className="err">{errors.titre.message}</p>}
+            </div>
+
+            {/* Extrait */}
+            <div className="field">
+              <label htmlFor="extrait">Extrait</label>
+              <input
+                id="extrait"
+                className="input"
+                placeholder="Résumé court du projet"
+                {...register("extrait")}
               />
             </div>
 
-            <div className="field" style={{ width: 260 }}>
-              <label htmlFor="statut">Statut</label>
-              <select id="statut" className="select" {...register("statut")}>
-                <option value="brouillon">brouillon</option>
-                <option value="publie">publie</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Ligne 5 : Mise en avant */}
-          <label className="field-row" style={{ alignItems: "center", gap: "var(--space-3)" }}>
-            <input type="checkbox" {...register("est_mis_en_avant")} />
-            <span>Mettre en avant</span>
-          </label>
-
-          {/* Ligne 6 : Catégories */}
-          <div className="field">
-            <div className="field-row" style={{ justifyContent: "space-between" }}>
-              <label>Catégories</label>
-              {loadingCats && <span className="muted">Chargement…</span>}
+            {/* Description */}
+            <div className="field">
+              <label htmlFor="description">Description</label>
+              <textarea
+                id="description"
+                rows={6}
+                className="input"
+                placeholder="Description détaillée, objectifs, contexte, stack, résultats…"
+                {...register("description")}
+                style={{ resize: "vertical" }}
+              />
             </div>
 
-            <div className="field-row" style={{ gap: "var(--space-4)", flexWrap: "wrap" }}>
-              {cats.map((c) => (
-                <label
-                  key={c.id_categorie}
-                  className="badge"
-                  style={{ cursor: "pointer", userSelect: "none" }}
-                >
-                  <input
-                    type="checkbox"
-                    value={c.id_categorie}
-                    checked={(watch("categories") || []).includes(c.id_categorie)}
-                    onChange={(e) => {
-                      const cur = new Set(watch("categories") || []);
-                      if (e.target.checked) cur.add(c.id_categorie);
-                      else cur.delete(c.id_categorie);
-                      setValue("categories", Array.from(cur), { shouldDirty: true });
-                    }}
-                    style={{ marginRight: "8px" }}
-                  />
-                  {c.nom}
-                </label>
-              ))}
-            </div>
-          </div>
+            {/* Client / Statut */}
+            <div className="row">
+              <div className="field grow">
+                <label htmlFor="client">Client</label>
+                <input
+                  id="client"
+                  className="input"
+                  placeholder="Nom du client (optionnel)"
+                  {...register("client")}
+                />
+              </div>
 
-          {/* Actions */}
-          <div className="field-row" style={{ justifyContent: "flex-end" }}>
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={() => history.back()}
-            >
-              Annuler
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={isSubmitting || createMut.isPending || updateMut.isPending}
-            >
-              {isEdit ? "Mettre à jour" : "Créer"}
-            </button>
-          </div>
-        </form>
+              <div className="field fixed">
+                <label htmlFor="statut">Statut</label>
+                <select id="statut" className="input" {...register("statut")}>
+                  <option value="brouillon">brouillon</option>
+                  <option value="publie">publie</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Mise en avant */}
+            <label className="checkbox-row">
+              <input type="checkbox" {...register("est_mis_en_avant")} />
+              <span>Mettre en avant</span>
+            </label>
+
+            {/* Catégories */}
+            <div className="field">
+              <div className="row" style={{ justifyContent: "space-between" }}>
+                <label>Catégories</label>
+                {loadingCats && <span className="muted">Chargement…</span>}
+              </div>
+
+              <div className="cats">
+                {cats.map((c) => {
+                  const selected = (watch("categories") || []).includes(c.id_categorie);
+                  return (
+                    <label
+                      key={c.id_categorie}
+                      className="badge"
+                      style={{
+                        cursor: "pointer",
+                        userSelect: "none",
+                        borderColor: selected ? "var(--color-primary)" : "var(--color-border)",
+                        color: selected ? "var(--color-primary)" : "inherit",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        value={c.id_categorie}
+                        checked={selected}
+                        onChange={(e) => {
+                          const cur = new Set(watch("categories") || []);
+                          if (e.target.checked) cur.add(c.id_categorie);
+                          else cur.delete(c.id_categorie);
+                          setValue("categories", Array.from(cur), { shouldDirty: true });
+                        }}
+                        style={{ marginRight: 8 }}
+                      />
+                      {c.nom}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="row" style={{ justifyContent: "flex-end" }}>
+              <button type="button" className="btn btn-ghost" onClick={() => history.back()}>
+                Annuler
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isSubmitting || createMut.isPending || updateMut.isPending}
+              >
+                {isEdit ? "Mettre à jour" : "Créer"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </section>
   );

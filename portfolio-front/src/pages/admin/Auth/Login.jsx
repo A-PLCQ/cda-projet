@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,6 +31,8 @@ export default function Login() {
   const loc = useLocation();
   const from = loc.state?.from || `/${ENV.adminSlug}/dashboard`;
 
+  const [showPwd, setShowPwd] = useState(false);
+
   useEffect(() => {
     bootstrap();
   }, []);
@@ -48,42 +50,70 @@ export default function Login() {
   };
 
   return (
-    <section
-      className="section"
-      style={{ display: "grid", placeItems: "center", minHeight: "100vh" }}
-    >
-      <div
-        className="card surface card-padding"
-        style={{
-          maxWidth: "420px",
-          width: "100%",
-          boxShadow: "var(--shadow-2)",
-        }}
-      >
-        <h1 className="mb-4">Connexion admin</h1>
-        <p className="muted mb-6">
-          Accédez au tableau de bord de <strong>{ENV.appName}</strong>
-        </p>
+    <section className="section s-auth">
+      <style>{`
+        .s-auth{
+          min-height:100vh;
+          display:flex; align-items:center; justify-content:center;
+          padding-block:var(--space-16);
+        }
 
-        {error && (
-          <div
-            style={{
-              color: "#ef4444",
-              background: "rgba(239,68,68,.1)",
-              padding: "var(--space-3)",
-              borderRadius: "var(--radius)",
-              marginBottom: "var(--space-4)",
-            }}
-          >
-            {error}
-          </div>
-        )}
+        .auth-card{
+          width:100%; max-width:480px;
+          border:1px solid var(--color-border);
+          background:var(--color-surface);
+          border-radius:var(--radius-lg);
+          box-shadow:var(--shadow-2);
+          padding:var(--space-6);
+        }
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="grid"
-          style={{ gap: "var(--space-4)" }}
-        >
+        .auth-head{display:flex; flex-direction:column; gap:.35rem; margin-bottom:var(--space-6)}
+        .auth-title{margin:0}
+        .auth-sub{color:var(--color-muted)}
+
+        form.auth-form{display:flex; flex-direction:column; gap:var(--space-4)}
+
+        .field{display:flex; flex-direction:column; gap:.35rem}
+        .field label{font-weight:600}
+        .field .input-wrap{display:flex; align-items:center; gap:.5rem}
+        .input{flex:1}
+
+        .pwd-toggle{
+          display:inline-flex; align-items:center; justify-content:center;
+          border:1px solid var(--color-border);
+          background:var(--color-surface);
+          border-radius:var(--radius);
+          padding:.55rem .7rem;
+          cursor:pointer;
+          transition:transform var(--duration) var(--ease), border-color var(--duration) var(--ease);
+        }
+        .pwd-toggle:hover{ transform:translateY(-1px); border-color:var(--color-primary) }
+
+        .error{
+          color:#ef4444; font-size:var(--step--1);
+          background:rgba(239,68,68,.08);
+          border:1px solid rgba(239,68,68,.25);
+          padding:var(--space-3);
+          border-radius:var(--radius);
+        }
+
+        .auth-footer{
+          margin-top:var(--space-6);
+          text-align:center; color:var(--color-muted)
+        }
+      `}</style>
+
+      <div className="auth-card">
+        <header className="auth-head">
+          <h1 className="auth-title">Connexion admin</h1>
+          <p className="auth-sub">
+            Accédez au tableau de bord de <strong>{ENV.appName}</strong>
+          </p>
+        </header>
+
+        {error && <div className="error" role="alert">{error}</div>}
+
+        <form className="auth-form" onSubmit={handleSubmit(onSubmit)}>
           <div className="field">
             <label htmlFor="email">Email</label>
             <input
@@ -91,10 +121,11 @@ export default function Login() {
               type="email"
               className="input"
               placeholder="exemple@domaine.com"
+              autoComplete="email"
               {...register("email")}
             />
             {errors.email && (
-              <p className="muted" style={{ color: "#ef4444", fontSize: "var(--step--1)" }}>
+              <p className="error" style={{ background: "transparent", border: 0, padding: 0 }}>
                 {errors.email.message}
               </p>
             )}
@@ -102,15 +133,27 @@ export default function Login() {
 
           <div className="field">
             <label htmlFor="password">Mot de passe</label>
-            <input
-              id="password"
-              type="password"
-              className="input"
-              placeholder="••••••••"
-              {...register("password")}
-            />
+            <div className="input-wrap">
+              <input
+                id="password"
+                type={showPwd ? "text" : "password"}
+                className="input"
+                placeholder="••••••••"
+                autoComplete="current-password"
+                {...register("password")}
+              />
+              <button
+                type="button"
+                className="pwd-toggle"
+                aria-label={showPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                onClick={() => setShowPwd((v) => !v)}
+                title={showPwd ? "Masquer" : "Afficher"}
+              >
+                {showPwd ? "🙈" : "👁️"}
+              </button>
+            </div>
             {errors.password && (
-              <p className="muted" style={{ color: "#ef4444", fontSize: "var(--step--1)" }}>
+              <p className="error" style={{ background: "transparent", border: 0, padding: 0 }}>
                 {errors.password.message}
               </p>
             )}
@@ -121,11 +164,8 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="mt-6 muted" style={{ textAlign: "center" }}>
-          Retour au site public :{" "}
-          <Link to="/" className="link">
-            Accueil
-          </Link>
+        <div className="auth-footer">
+          Retour au site public : <Link to="/" className="link">Accueil</Link>
         </div>
       </div>
     </section>
